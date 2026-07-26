@@ -1,0 +1,35 @@
+# Dev compose — runs both components locally for testing.
+# In production: the agent runs on the main server, the bot runs on the Pi.
+#
+# Usage:
+#   cp .env.example .env  # fill in your values
+#   docker compose -f docker-compose.dev.yml up --build
+
+services:
+  agent:
+    build:
+      context: ./agent
+    ports:
+      - "8420:8420"
+    volumes:
+      - agent_logs:/var/log/servitor
+    env_file: .env
+    environment:
+      # Agent reads API_KEY, TRACKED_SERVICES, LOG_DIR, HOST, PORT from .env
+      HOST: "0.0.0.0"
+      PORT: "8420"
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: ./bot
+    depends_on:
+      - agent
+    env_file: .env
+    environment:
+      # Override agent URL to point to the local dev agent container
+      AGENT_URL: "http://agent:8420"
+    restart: unless-stopped
+
+volumes:
+  agent_logs:
