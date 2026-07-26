@@ -14,6 +14,15 @@ A two-component Discord bot system for monitoring and managing a NixOS homelab g
        └──────────────────────────► /var/log/servitor/audit.log
 ```
 
+## Use Case
+
+I run a NixOS managed homelab that I run games on. You can find it [here](https://github.com/kahnshaak/homelab) if you would like.
+I needed a way to be able to give my friends access to the status of the games servers, and so thats what this is for.
+It conforms to my own needs, but forking it should get you halfway to building something that can be suited for your architecture.
+
+The bot runs on an always-on raspberry pi 3 without any storage for itself, and it is orchestrated by the NixOS server.
+The agent is for running on the server itself.
+
 ## Components
 
 | Component | Location | Purpose |
@@ -37,6 +46,8 @@ A two-component Discord bot system for monitoring and managing a NixOS homelab g
 | `/sleep-server` | Role | Suspend the server (use `/wake` to bring it back) |
 
 Management commands post a public announcement in the configured channel and log to the audit file.
+
+> **Note on `/sleep-server` + `/wake`:** `systemctl suspend` puts the server into S3 (suspend-to-RAM). WoL from S3 requires a BIOS/UEFI setting — look for **"Wake on LAN from S3"** or **"WoL in S3"**. If your board only supports WoL from S5 (powered-off), use `/restart-server` instead and rely on regular WoL after a full shutdown.
 
 ---
 
@@ -93,9 +104,9 @@ docker run -d \
   servitor-agent
 ```
 
-#### Bot (Raspberry Pi)
+#### Bot (Raspberry Pi 3 — aarch64)
 
-Build on the main server and push to the Pi:
+NixOS on Pi 3 runs 64-bit (aarch64). Build the multi-stage Alpine image on the main server and ship it to the Pi — no build tools needed on the Pi itself:
 
 ```bash
 # On the main server
@@ -111,6 +122,8 @@ docker run -d \
   --env-file /path/to/bot.env \
   servitor-bot
 ```
+
+The bot image is stateless — no volumes, no disk writes. All runtime state is in memory. If the container restarts, any audit entries buffered since the last hourly ship are lost (this is acceptable for diskless hardware).
 
 ---
 
@@ -135,6 +148,7 @@ docker run -d \
 | `WOL_MAC_ADDRESS` | ✅ | MAC address of the main server |
 | `WOL_BROADCAST_ADDRESS` | ✅ | LAN broadcast address, e.g. `192.168.1.255` |
 | `REQUIRED_ROLE_NAME` | ✅ | Discord role name required for management commands |
+| `GUILD_ID` | — | Discord server ID for instant slash command sync. Omit for global sync (up to 1h delay). |
 | `LOG_SHIP_INTERVAL_SECONDS` | — | Audit log ship frequency in seconds (default: `3600`) |
 | `STATUS_POLL_INTERVAL_SECONDS` | — | Presence poll frequency in seconds (default: `30`) |
 
@@ -152,7 +166,9 @@ docker run -d \
 
 ## Audit Logs
 
-Bot audit entries are buffered in memory and shipped hourly to the agent, which writes them to `$LOG_DIR/audit.log` as rotating JSON lines:
+The bot buffers audit entries **in memory only** — no disk access on the Pi. Entries are shipped hourly via HTTP to the agent, which persists them to `$LOG_DIR/audit.log` on the main server as rotating JSON lines.
+
+A bot restart before the next hourly ship will lose that window of entries. This is an accepted tradeoff for running on diskless hardware.
 
 ```json
 {"timestamp": "2026-07-26T22:00:00+00:00", "discord_user": "kahnshaak#0001", "discord_user_id": 123456789, "command": "restart", "args": {"service": "palworld"}, "result": "success", "received_at": "2026-07-26T22:00:05+00:00"}

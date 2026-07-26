@@ -42,5 +42,12 @@ class Settings(BaseSettings):
         default=30, description="How often (seconds) to poll the agent for server status"
     )
 
+    # Optional: set to your Discord guild (server) ID for instant slash command sync.
+    # Global sync (default when unset) can take up to 1 hour to propagate.
+    guild_id: int | None = Field(
+        default=None,
+        description="Discord guild ID for guild-scoped slash command sync (instant). Leave unset for global sync.",
+    )
+
 
 settings = Settings()
