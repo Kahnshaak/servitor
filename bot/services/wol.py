@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import socket
-import struct
 
 
 def _build_magic_packet(mac: str) -> bytes:

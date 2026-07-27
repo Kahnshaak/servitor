@@ -1,7 +1,12 @@
+from __future__ import annotations
+
+# pyrefly: ignore [missing-import]
 import uvicorn
+# pyrefly: ignore [missing-import]
 from fastapi import FastAPI
 
 from config import settings
+# pyrefly: ignore [missing-import]
 from middleware.auth import APIKeyMiddleware
 from routes import health, services, system, logs
 

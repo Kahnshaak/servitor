@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 import aiohttp
 
 from config import settings

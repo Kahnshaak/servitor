@@ -1,7 +1,9 @@
 import asyncio
 import logging
 
+# pyrefly: ignore [missing-import]
 import discord
+# pyrefly: ignore [missing-import]
 from discord.ext import commands
 
 from config import settings
@@ -19,7 +21,10 @@ log = logging.getLogger("servitor.bot")
 
 class ServitorBot(commands.Bot):
     def __init__(self) -> None:
-        intents = discord.Intents.default()
+        # Minimal intents — slash commands only need guild access.
+        # No privileged intents (message_content, members, presences) required.
+        intents = discord.Intents.none()
+        intents.guilds = True
         super().__init__(command_prefix="!", intents=intents)
         # Audit entries are buffered purely in memory — no disk writes on the Pi.
         # Entries are shipped to the agent hourly. A crash before the next ship

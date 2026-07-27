@@ -56,10 +56,42 @@ Management commands post a public announcement in the configured channel and log
 ### Prerequisites
 
 - Python 3.12+
-- Docker (for containerised deployment)
+- Docker / Podman (for containerised deployment)
 - The agent's service user needs passwordless sudo for specific commands (see below)
 
-### 1. Configure secrets
+### 1. Create the Discord Application
+
+Go to the [Discord Developer Portal](https://discord.com/developers/applications) and create a new application.
+
+#### Bot tab
+- Click **Add Bot**
+- Copy the **Token** → this is your `DISCORD_TOKEN`
+- Under **Privileged Gateway Intents**, make sure **all three are OFF**:
+  - ❌ Presence Intent
+  - ❌ Server Members Intent
+  - ❌ Message Content Intent
+
+  Servitor doesn't need any of these. Keeping them off avoids a verification requirement if the bot ever joins a large server.
+
+#### OAuth2 → URL Generator
+Select the following and copy the generated URL to invite the bot to your server:
+
+**Scopes:**
+- ✅ `bot`
+- ✅ `applications.commands`
+
+**Bot Permissions:**
+- ✅ View Channel
+- ✅ Send Messages
+- ✅ Embed Links
+
+> [!NOTE]
+> The permissions integer for the above combination is **`19456`**. Your generated invite URL will contain `permissions=19456`. Do **not** grant Administrator — the bot only needs to read and post in one channel.
+
+#### Channel permissions
+Make sure the bot's role has **View Channel**, **Send Messages**, and **Embed Links** in your announcement channel. If the channel is locked down (e.g., view-only for most roles), you'll need to add a channel-level override for the bot's role.
+
+### 2. Configure secrets
 
 ```bash
 cp .env.example .env

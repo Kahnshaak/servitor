@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+# pyrefly: ignore [missing-import]
 import discord
+# pyrefly: ignore [missing-import]
 from discord import app_commands
+# pyrefly: ignore [missing-import]
 from discord.ext import commands
 
 from config import settings
